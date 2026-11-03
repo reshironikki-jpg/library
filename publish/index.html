@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Manajemen Perpustakaan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white shadow-md">
+    <div class="max-w-5xl mx-auto px-4 py-6 flex justify-between items-center">
+      <h1 class="text-2xl font-bold flex items-center gap-2">
+        📚 E-Perpustakaan
+      </h1>
+      <span class="text-sm bg-indigo-500 px-3 py-1 rounded-full">Web App</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+    
+    <!-- Form Tambah Buku -->
+    <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <h2 class="text-xl font-semibold mb-4 text-slate-700">Tambah Buku Baru</h2>
+      <form id="bookForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-600">Judul Buku</label>
+          <input type="text" id="title" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300" placeholder="Masukkan judul buku">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-600">Penulis</label>
+          <input type="text" id="author" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300" placeholder="Nama penulis">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-600">Tahun Terbit</label>
+          <input type="number" id="year" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300" placeholder="2024">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1 text-slate-600">Kategori</label>
+          <select id="category" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300">
+            <option value="Fiksi">Fiksi</option>
+            <option value="Non-Fiksi">Non-Fiksi</option>
+            <option value="Teknologi">Teknologi</option>
+            <option value="Sains">Sains</option>
+            <option value="Sejarah">Sejarah</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition duration-200">
+          Simpan Buku
+        </button>
+      </form>
+    </section>
+
+    <!-- Daftar Buku -->
+    <section class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-slate-700">Daftar Buku</h2>
+        <span id="bookCount" class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">0 Buku</span>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-500 text-sm">
+              <th class="py-3 px-2">Judul</th>
+              <th class="py-3 px-2">Penulis</th>
+              <th class="py-3 px-2">Tahun</th>
+              <th class="py-3 px-2">Kategori</th>
+              <th class="py-3 px-2 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="bookList" class="divide-y divide-slate-100 text-sm">
+            <!-- Data buku akan muncul di sini via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="index.js"></script>
+</body>
+</html>

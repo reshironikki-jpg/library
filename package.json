@@ -1,0 +1,10 @@
+{
+  "name": "aplikasi-perpustakaan",
+  "version": "1.0.0",
+  "description": "Aplikasi Manajemen Perpustakaan Sederhana",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {}
+}

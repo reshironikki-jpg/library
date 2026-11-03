@@ -1,0 +1,12 @@
+{
+  "name": "aplikasi-perpustakaan-firebase",
+  "version": "1.0.0",
+  "description": "Aplikasi Perpustakaan dengan Vercel Serverless & Firebase Firestore",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.11.0"
+  }
+}

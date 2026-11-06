@@ -87,20 +87,90 @@
     const bookList = document.getElementById('bookList');
     const bookCount = document.getElementById('bookCount');
 
+    // Tampilkan pesan yang mudah dibaca di dalam tabel, menggantikan baris data
+    function renderNotice({ icon, title, detail, technical, retry }) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.className = 'py-10 px-4';
+
+      const panel = document.createElement('div');
+      panel.className = 'max-w-md mx-auto text-center';
+      panel.innerHTML = `
+        <div class="text-3xl" aria-hidden="true">${escapeHtml(icon || 'ℹ️')}</div>
+        <p class="mt-2 font-semibold text-slate-700">${escapeHtml(title)}</p>
+        <p class="mt-1 text-sm text-slate-500">${escapeHtml(detail)}</p>
+      `;
+
+      // Alasan teknis dari server disembunyikan agar tidak mengacaukan tampilan
+      if (technical) {
+        const details = document.createElement('details');
+        details.className = 'mt-3 text-left';
+        details.innerHTML = `
+          <summary class="cursor-pointer text-xs font-medium text-indigo-600">Detail teknis</summary>
+          <pre class="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-2"></pre>
+        `;
+        details.querySelector('pre').textContent = technical;
+        panel.appendChild(details);
+      }
+
+      if (retry) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200';
+        button.textContent = 'Coba lagi';
+        button.addEventListener('click', fetchBooks);
+        panel.appendChild(button);
+      }
+
+      cell.appendChild(panel);
+      row.appendChild(cell);
+      bookList.replaceChildren(row);
+      bookCount.textContent = '—';
+    }
+
     // Fungsi Fetch untuk Mengambil Data Buku dari API
     async function fetchBooks() {
+      bookList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Memuat data dari database...</td></tr>`;
+
       try {
-        const response = await fetch('/api');
-        const result = await response.json();
-        
-        if (result.success) {
-          renderBooks(result.data);
-        } else {
-          bookList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-red-400">Gagal memuat data buku.</td></tr>`;
+        const response = await fetch('/api', { headers: { Accept: 'application/json' } });
+
+        // Body belum tentu JSON (mis. halaman error platform), jadi dibaca dengan aman
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
         }
+
+        if (!response.ok || !result || result.success !== true) {
+          // Alasan dari server bisa ada di `message` dan/atau `error`
+          const serverDetail = result
+            ? [result.message, result.error].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i).join('\n\n')
+            : '';
+          renderNotice({
+            icon: '⚠️',
+            title: 'Data buku gagal dimuat',
+            detail: serverDetail
+              ? 'Server menolak permintaan ini. Silakan coba lagi beberapa saat lagi.'
+              : `Server membalas dengan status ${response.status} dan tidak mengirim data yang bisa dibaca.`,
+            technical: serverDetail || `HTTP ${response.status} ${response.statusText || ''}`.trim(),
+            retry: true
+          });
+          return;
+        }
+
+        renderBooks(Array.isArray(result.data) ? result.data : []);
       } catch (error) {
         console.error('Error fetching books:', error);
-        bookList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-red-400">Terjadi kesalahan koneksi server.</td></tr>`;
+        renderNotice({
+          icon: '📡',
+          title: 'Tidak dapat menghubungi server',
+          detail: 'Periksa koneksi internet Anda, lalu coba lagi.',
+          technical: error && error.message ? error.message : String(error),
+          retry: true
+        });
       }
     }
 
@@ -155,12 +225,19 @@
           body: JSON.stringify(newBook)
         });
         
-        const result = await response.json();
-        if (result.success) {
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
+        }
+
+        if (response.ok && result && result.success) {
           bookForm.reset();
           fetchBooks();
         } else {
-          alert('Gagal menyimpan: ' + result.message);
+          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
+          alert('Buku gagal disimpan.\n\n' + reason);
         }
       } catch (error) {
         console.error('Error adding book:', error);
@@ -177,12 +254,18 @@
 
       try {
         const response = await fetch(`/api?id=${id}`, { method: 'DELETE' });
-        const result = await response.json();
-        
-        if (result.success) {
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
+        }
+
+        if (response.ok && result && result.success) {
           fetchBooks();
         } else {
-          alert('Gagal menghapus: ' + result.message);
+          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
+          alert('Buku gagal dihapus.\n\n' + reason);
         }
       } catch (error) {
         console.error('Error deleting book:', error);
@@ -192,7 +275,12 @@
 
     // Security Helper untuk mencegah XSS
     function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     // Muat data saat halaman pertama kali dibuka

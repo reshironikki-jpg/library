@@ -1,279 +1,390 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Manajemen Perpustakaan Firebase</title>
+  <title>Pustaka — Perpustakaan Digital</title>
+  <meta name="description" content="Koleksi buku perpustakaan digital yang rapi dan mudah ditelusuri.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper: '#f4efe4',
+            surface: '#fffdf7',
+            ink: '#1b2a22',
+            muted: '#6d776c',
+            line: '#e2d9c8',
+            forest: { DEFAULT: '#14493a', deep: '#0e352a', soft: '#1d5a48' },
+            brass: { DEFAULT: '#c1873b', soft: '#f0e2c6' }
+          },
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          },
+          boxShadow: {
+            book: '0 18px 38px -22px rgba(16,42,32,.55)',
+            lift: '0 30px 55px -26px rgba(16,42,32,.6)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #f4efe4;
+      background-image:
+        radial-gradient(circle at 12% 0%, rgba(193, 135, 59, .12), transparent 42%),
+        radial-gradient(circle at 88% 8%, rgba(20, 73, 58, .10), transparent 46%);
+    }
+
+    .hero-panel {
+      background-color: #0e352a;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(193, 135, 59, .30), transparent 55%),
+        radial-gradient(circle at 92% 88%, rgba(45, 122, 96, .45), transparent 55%),
+        linear-gradient(135deg, #10402f 0%, #0d2f25 58%, #0a251d 100%);
+    }
+
+    .cover-texture {
+      background-image:
+        repeating-linear-gradient(115deg, rgba(255,255,255,.045) 0 1px, transparent 1px 5px),
+        radial-gradient(circle at 78% 12%, rgba(255,255,255,.16), transparent 58%);
+      mix-blend-mode: screen;
+    }
+
+    .cover-sheen {
+      background: linear-gradient(105deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.03) 22%, transparent 44%);
+      pointer-events: none;
+    }
+
+    .feature-cover {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 148px;
+      height: 208px;
+      border-radius: 4px 12px 12px 4px;
+      overflow: hidden;
+      box-shadow: 0 26px 45px -20px rgba(0, 0, 0, .7), inset -16px 0 22px -14px rgba(0, 0, 0, .55);
+      transition: transform .45s cubic-bezier(.2,.7,.3,1);
+    }
+    .feature-cover:nth-child(1) { transform: translate(-50%, -50%) translateX(-86px) rotate(-11deg) scale(.9); }
+    .feature-cover:nth-child(2) { transform: translate(-50%, -54%) translateY(-6px) scale(1.02); z-index: 3; }
+    .feature-cover:nth-child(3) { transform: translate(-50%, -50%) translateX(86px) rotate(11deg) scale(.9); }
+    .cover-stack:hover .feature-cover:nth-child(1) { transform: translate(-50%, -50%) translateX(-104px) rotate(-14deg) scale(.92); }
+    .cover-stack:hover .feature-cover:nth-child(2) { transform: translate(-50%, -57%) translateY(-10px) scale(1.05); }
+    .cover-stack:hover .feature-cover:nth-child(3) { transform: translate(-50%, -50%) translateX(104px) rotate(14deg) scale(.92); }
+
+    .book-card .book-art {
+      transition: transform .35s cubic-bezier(.2,.7,.3,1), box-shadow .35s ease;
+    }
+    .book-card:hover .book-art {
+      transform: translateY(-8px) rotate(-.6deg);
+      box-shadow: 0 34px 55px -26px rgba(16, 42, 32, .65), 0 8px 18px -12px rgba(16,42,32,.35);
+    }
+
+    .skeleton {
+      background: linear-gradient(100deg, rgba(226,217,200,.55) 20%, rgba(244,239,228,.9) 42%, rgba(226,217,200,.55) 64%);
+      background-size: 220% 100%;
+      animation: shimmer 1.5s linear infinite;
+    }
+    @keyframes shimmer { to { background-position: -220% 0; } }
+
+    dialog[open] { animation: pop .24s cubic-bezier(.2,.7,.3,1); }
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(12px) scale(.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .pill-scroll { scrollbar-width: none; }
+    .pill-scroll::-webkit-scrollbar { display: none; }
+
+    ::selection { background: #e8d2ab; color: #10352a; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+<body class="min-h-screen font-sans text-ink antialiased">
 
   <!-- Header -->
-  <header class="bg-indigo-600 text-white shadow-md">
-    <div class="max-w-5xl mx-auto px-4 py-6 flex justify-between items-center">
-      <h1 class="text-2xl font-bold flex items-center gap-2">
-        📚 E-Perpustakaan Cloud
-      </h1>
-      <span class="text-sm bg-indigo-500 px-3 py-1 rounded-full">Vercel & Firebase</span>
+  <header class="sticky top-0 z-40 border-b border-line/70 bg-paper/85 backdrop-blur-md">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
+      <a href="#koleksi" class="group flex items-center gap-3">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-forest text-brass-soft shadow-sm transition group-hover:bg-forest-deep">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5V5.5Z"/>
+            <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21.5V5.5Z"/>
+          </svg>
+        </span>
+        <span>
+          <span class="block font-display text-xl font-semibold leading-none tracking-tight">Pustaka</span>
+          <span class="mt-1 hidden text-[10px] uppercase tracking-[0.22em] text-muted sm:block">Perpustakaan digital</span>
+        </span>
+      </a>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <span class="hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-muted sm:flex">
+          <span class="h-1.5 w-1.5 rounded-full bg-forest-soft"></span>
+          <span id="headerCount">Memuat…</span>
+        </span>
+        <button type="button" data-open-form
+          class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-forest px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-4 w-4">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Tambah Buku
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-    
-    <!-- Form Tambah Buku -->
-    <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h2 class="text-xl font-semibold mb-4 text-slate-700">Tambah Buku Baru</h2>
-      <form id="bookForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1 text-slate-600">Judul Buku</label>
-          <input type="text" id="title" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300" placeholder="Masukkan judul buku">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 text-slate-600">Penulis</label>
-          <input type="text" id="author" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300" placeholder="Nama penulis">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 text-slate-600">Tahun Terbit</label>
-          <input type="number" id="year" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300" placeholder="2026">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 text-slate-600">Kategori</label>
-          <select id="category" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-slate-300">
-            <option value="Fiksi">Fiksi</option>
-            <option value="Non-Fiksi">Non-Fiksi</option>
-            <option value="Teknologi">Teknologi</option>
-            <option value="Sains">Sains</option>
-            <option value="Sejarah">Sejarah</option>
-          </select>
-        </div>
-        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition duration-200">
-          Simpan Buku
-        </button>
-      </form>
-    </section>
+  <main class="mx-auto max-w-6xl px-5 pb-20">
 
-    <!-- Daftar Buku -->
-    <section class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-slate-700">Daftar Koleksi Buku</h2>
-        <span id="bookCount" class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">0 Buku</span>
-      </div>
-      
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b border-slate-200 text-slate-500 text-sm">
-              <th class="py-3 px-2">Judul</th>
-              <th class="py-3 px-2">Penulis</th>
-              <th class="py-3 px-2">Tahun</th>
-              <th class="py-3 px-2">Kategori</th>
-              <th class="py-3 px-2 text-center">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="bookList" class="divide-y divide-slate-100 text-sm">
-            <tr>
-              <td colspan="5" class="py-6 text-center text-slate-400">Memuat data dari database...</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Hero -->
+    <section class="hero-panel relative mt-6 overflow-hidden rounded-[28px] px-6 py-10 text-white shadow-lift sm:px-10 sm:py-14">
+      <div class="grid items-center gap-12 lg:grid-cols-[1.15fr_.85fr]">
+        <div class="relative z-10">
+          <p class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-brass-soft/80">
+            <span class="h-px w-6 bg-brass/70"></span>
+            Koleksi perpustakaan
+          </p>
+
+          <h1 class="mt-5 font-display text-[2.1rem] font-semibold leading-[1.12] tracking-tight sm:text-[2.9rem]">
+            Setiap rak menyimpan<br class="hidden sm:block">
+            <span class="italic text-brass-soft">cerita</span> untuk ditemukan.
+          </h1>
+
+          <p class="mt-4 max-w-md text-sm leading-relaxed text-white/65 sm:text-[15px]">
+            Telusuri koleksi, temukan penulis favorit, dan tambahkan buku baru ke rak digital perpustakaan.
+          </p>
+
+          <div class="mt-7 max-w-md">
+            <label for="searchInput" class="sr-only">Cari buku</label>
+            <div class="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/95 px-4 py-3 text-ink shadow-lg transition focus-within:border-brass focus-within:ring-4 focus-within:ring-brass/25">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-5 w-5 shrink-0 text-muted">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+              </svg>
+              <input id="searchInput" type="search" autocomplete="off" placeholder="Cari judul, penulis, atau kategori…"
+                class="w-full bg-transparent text-sm text-ink placeholder:text-muted/80 focus:outline-none">
+              <kbd class="hidden shrink-0 rounded border border-line bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-muted sm:block">/</kbd>
+            </div>
+          </div>
+
+          <dl class="mt-9 grid max-w-md grid-cols-3 gap-4 border-t border-white/10 pt-6">
+            <div>
+              <dt class="text-[10px] uppercase tracking-[0.18em] text-white/45">Buku</dt>
+              <dd id="statTotal" class="mt-1 font-display text-2xl font-semibold text-brass-soft">—</dd>
+            </div>
+            <div class="border-l border-white/10 pl-4">
+              <dt class="text-[10px] uppercase tracking-[0.18em] text-white/45">Kategori</dt>
+              <dd id="statCategories" class="mt-1 font-display text-2xl font-semibold text-brass-soft">—</dd>
+            </div>
+            <div class="border-l border-white/10 pl-4">
+              <dt class="text-[10px] uppercase tracking-[0.18em] text-white/45">Terbitan</dt>
+              <dd id="statLatest" class="mt-1 font-display text-2xl font-semibold text-brass-soft">—</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="relative hidden lg:block">
+          <span class="absolute -top-2 right-4 z-20 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-white/70 backdrop-blur">
+            Rak pilihan
+          </span>
+          <div id="featureStack" class="cover-stack relative h-[290px]" aria-hidden="true"></div>
+          <p class="mt-2 text-center text-[11px] tracking-wide text-white/35">Koleksi terbaru di perpustakaan</p>
+        </div>
       </div>
     </section>
 
+    <!-- Kategori -->
+    <section class="mt-10" aria-label="Filter kategori">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div id="categoryPills" class="pill-scroll -mx-1 flex gap-2 overflow-x-auto px-1 py-1"></div>
+        <p class="hidden text-xs text-muted lg:block">Klik kategori untuk menyaring rak</p>
+      </div>
+    </section>
+
+    <!-- Koleksi -->
+    <section id="koleksi" class="mt-8 scroll-mt-24">
+      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
+        <div>
+          <h2 class="font-display text-2xl font-semibold tracking-tight sm:text-[1.75rem]">Koleksi Buku</h2>
+          <p id="bookCount" class="mt-1 text-sm text-muted">Memuat koleksi…</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <label for="sortSelect" class="hidden text-xs font-medium text-muted sm:block">Urutkan</label>
+          <div class="relative">
+            <select id="sortSelect"
+              class="appearance-none rounded-xl border border-line bg-surface py-2.5 pl-3.5 pr-9 text-xs font-medium text-ink shadow-sm transition focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/20">
+              <option value="newest">Terbaru</option>
+              <option value="title">Judul A–Z</option>
+              <option value="year-desc">Tahun terbaru</option>
+              <option value="year-asc">Tahun terlama</option>
+            </select>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div id="bookGrid" class="mt-7 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 lg:grid-cols-4"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-20 flex flex-col items-center justify-between gap-4 border-t border-line pt-8 text-xs text-muted sm:flex-row">
+      <p class="flex items-center gap-2">
+        <span class="grid h-6 w-6 place-items-center rounded-md bg-forest text-brass-soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-3.5 w-3.5">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5V5.5Z"/>
+            <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21.5V5.5Z"/>
+          </svg>
+        </span>
+        Pustaka &middot; Dijalankan di Vercel Serverless &amp; Firebase Firestore
+      </p>
+      <p>&copy; <span id="copyYear">2026</span> Perpustakaan Digital</p>
+    </footer>
   </main>
 
+  <!-- Dialog tambah buku -->
+  <dialog id="bookDialog" class="w-[min(94vw,540px)] rounded-3xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-forest-deep/45 backdrop:backdrop-blur-sm">
+    <div class="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+      <div>
+        <h3 class="font-display text-xl font-semibold tracking-tight">Tambah Buku Baru</h3>
+        <p class="mt-1 text-xs text-muted">Lengkapi detail buku untuk menambahkannya ke rak.</p>
+      </div>
+      <button type="button" data-close-form aria-label="Tutup"
+        class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-muted transition hover:bg-paper hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-forest/40">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-4 w-4">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <form id="bookForm" class="space-y-4 px-6 py-5">
+      <div>
+        <label for="title" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Judul Buku</label>
+        <input id="title" name="title" type="text" required placeholder="Contoh: Bumi Manusia"
+          class="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm placeholder:text-muted/60 focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15">
+      </div>
+
+      <div>
+        <label for="author" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Penulis</label>
+        <input id="author" name="author" type="text" required placeholder="Nama penulis"
+          class="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm placeholder:text-muted/60 focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="year" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Tahun Terbit</label>
+          <input id="year" name="year" type="number" required min="1000" max="2999" placeholder="2026"
+            class="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm tabular-nums placeholder:text-muted/60 focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15">
+        </div>
+        <div>
+          <label for="category" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Kategori</label>
+          <div class="relative">
+            <select id="category" name="category"
+              class="w-full appearance-none rounded-xl border border-line bg-white py-2.5 pl-3.5 pr-9 text-sm focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15">
+              <option value="Fiksi">Fiksi</option>
+              <option value="Non-Fiksi">Non-Fiksi</option>
+              <option value="Teknologi">Teknologi</option>
+              <option value="Sains">Sains</option>
+              <option value="Sejarah">Sejarah</option>
+            </select>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <p id="formError" class="hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"></p>
+
+      <div class="flex items-center justify-end gap-2 border-t border-line pt-5">
+        <button type="button" data-close-form
+          class="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-paper hover:text-ink">Batal</button>
+        <button type="submit" id="submitBtn"
+          class="rounded-xl bg-forest px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-forest-deep disabled:cursor-not-allowed disabled:opacity-60">Simpan Buku</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialog konfirmasi hapus -->
+  <dialog id="confirmDialog" class="w-[min(92vw,400px)] rounded-3xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-forest-deep/45 backdrop:backdrop-blur-sm">
+    <div class="px-6 pb-2 pt-6">
+      <span class="grid h-10 w-10 place-items-center rounded-full bg-red-50 text-red-600">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+          <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"/>
+        </svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-semibold tracking-tight">Hapus buku ini?</h3>
+      <p id="confirmMessage" class="mt-1.5 text-sm leading-relaxed text-muted"></p>
+    </div>
+    <div class="flex items-center justify-end gap-2 px-6 pb-6 pt-5">
+      <button type="button" id="confirmCancel"
+        class="rounded-xl border border-line px-4 py-2 text-sm font-medium text-muted transition hover:bg-paper hover:text-ink">Batal</button>
+      <button type="button" id="confirmOk"
+        class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">Hapus</button>
+    </div>
+  </dialog>
+
+  <div id="toastRoot" class="fixed bottom-5 right-5 z-50 flex w-[min(92vw,360px)] flex-col gap-2" aria-live="polite" aria-atomic="false"></div>
+
   <script>
-    const bookForm = document.getElementById('bookForm');
-    const bookList = document.getElementById('bookList');
-    const bookCount = document.getElementById('bookCount');
+    const els = {
+      grid: document.getElementById('bookGrid'),
+      count: document.getElementById('bookCount'),
+      headerCount: document.getElementById('headerCount'),
+      total: document.getElementById('statTotal'),
+      categories: document.getElementById('statCategories'),
+      latest: document.getElementById('statLatest'),
+      pills: document.getElementById('categoryPills'),
+      search: document.getElementById('searchInput'),
+      sort: document.getElementById('sortSelect'),
+      featured: document.getElementById('featureStack'),
+      form: document.getElementById('bookForm'),
+      bookDialog: document.getElementById('bookDialog'),
+      submitBtn: document.getElementById('submitBtn'),
+      formError: document.getElementById('formError'),
+      confirmDialog: document.getElementById('confirmDialog'),
+      confirmMessage: document.getElementById('confirmMessage'),
+      toastRoot: document.getElementById('toastRoot')
+    };
 
-    // Tampilkan pesan yang mudah dibaca di dalam tabel, menggantikan baris data
-    function renderNotice({ icon, title, detail, technical, retry }) {
-      const row = document.createElement('tr');
-      const cell = document.createElement('td');
-      cell.colSpan = 5;
-      cell.className = 'py-10 px-4';
+    const state = {
+      books: [],
+      loading: true,
+      error: null,
+      query: '',
+      category: 'Semua',
+      sort: 'newest'
+    };
 
-      const panel = document.createElement('div');
-      panel.className = 'max-w-md mx-auto text-center';
-      panel.innerHTML = `
-        <div class="text-3xl" aria-hidden="true">${escapeHtml(icon || 'ℹ️')}</div>
-        <p class="mt-2 font-semibold text-slate-700">${escapeHtml(title)}</p>
-        <p class="mt-1 text-sm text-slate-500">${escapeHtml(detail)}</p>
-      `;
+    const COVER_PALETTES = [
+      { from: '#1f4d3d', to: '#0b2a20', accent: '#9fd0b6' },
+      { from: '#6d2f2a', to: '#301110', accent: '#e8ac8f' },
+      { from: '#2a3f66', to: '#101c33', accent: '#a9c2ea' },
+      { from: '#7a5a1f', to: '#372606', accent: '#ecd196' },
+      { from: '#4a3560', to: '#1d142b', accent: '#cbb1e8' },
+      { from: '#2f5257', to: '#0f2427', accent: '#a6d6dc' },
+      { from: '#8a4a2b', to: '#3c1d0d', accent: '#f0c3a0' }
+    ];
 
-      // Alasan teknis dari server disembunyikan agar tidak mengacaukan tampilan
-      if (technical) {
-        const details = document.createElement('details');
-        details.className = 'mt-3 text-left';
-        details.innerHTML = `
-          <summary class="cursor-pointer text-xs font-medium text-indigo-600">Detail teknis</summary>
-          <pre class="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-2"></pre>
-        `;
-        details.querySelector('pre').textContent = technical;
-        panel.appendChild(details);
-      }
-
-      if (retry) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition duration-200';
-        button.textContent = 'Coba lagi';
-        button.addEventListener('click', fetchBooks);
-        panel.appendChild(button);
-      }
-
-      cell.appendChild(panel);
-      row.appendChild(cell);
-      bookList.replaceChildren(row);
-      bookCount.textContent = '—';
-    }
-
-    // Fungsi Fetch untuk Mengambil Data Buku dari API
-    async function fetchBooks() {
-      bookList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Memuat data dari database...</td></tr>`;
-
-      try {
-        const response = await fetch('/api', { headers: { Accept: 'application/json' } });
-
-        // Body belum tentu JSON (mis. halaman error platform), jadi dibaca dengan aman
-        let result = null;
-        try {
-          result = await response.json();
-        } catch (parseError) {
-          result = null;
-        }
-
-        if (!response.ok || !result || result.success !== true) {
-          // Alasan dari server bisa ada di `message` dan/atau `error`
-          const serverDetail = result
-            ? [result.message, result.error].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i).join('\n\n')
-            : '';
-          renderNotice({
-            icon: '⚠️',
-            title: 'Data buku gagal dimuat',
-            detail: serverDetail
-              ? 'Server menolak permintaan ini. Silakan coba lagi beberapa saat lagi.'
-              : `Server membalas dengan status ${response.status} dan tidak mengirim data yang bisa dibaca.`,
-            technical: serverDetail || `HTTP ${response.status} ${response.statusText || ''}`.trim(),
-            retry: true
-          });
-          return;
-        }
-
-        renderBooks(Array.isArray(result.data) ? result.data : []);
-      } catch (error) {
-        console.error('Error fetching books:', error);
-        renderNotice({
-          icon: '📡',
-          title: 'Tidak dapat menghubungi server',
-          detail: 'Periksa koneksi internet Anda, lalu coba lagi.',
-          technical: error && error.message ? error.message : String(error),
-          retry: true
-        });
-      }
-    }
-
-    // Render Data ke Tabel HTML
-    function renderBooks(books) {
-      bookList.innerHTML = '';
-      
-      if (books.length === 0) {
-        bookList.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Belum ada buku tersimpan di database.</td></tr>`;
-      } else {
-        books.forEach(book => {
-          const row = document.createElement('tr');
-          row.className = 'hover:bg-slate-50 transition';
-          row.innerHTML = `
-            <td class="py-3 px-2 font-medium text-slate-800">${escapeHtml(book.title || '')}</td>
-            <td class="py-3 px-2 text-slate-600">${escapeHtml(book.author || '')}</td>
-            <td class="py-3 px-2 text-slate-600">${book.year || '-'}</td>
-            <td class="py-3 px-2">
-              <span class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded font-medium">${escapeHtml(book.category || 'Umum')}</span>
-            </td>
-            <td class="py-3 px-2 text-center">
-              <button onclick="deleteBook('${book.id}')" class="text-red-500 hover:text-red-700 font-medium text-xs bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded transition">
-                Hapus
-              </button>
-            </td>
-          `;
-          bookList.appendChild(row);
-        });
-      }
-      bookCount.textContent = `${books.length} Buku`;
-    }
-
-    // Event Listener untuk Menambah Buku (POST)
-    bookForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submitBtn = document.getElementById('submitBtn');
-      
-      const newBook = {
-        title: document.getElementById('title').value.trim(),
-        author: document.getElementById('author').value.trim(),
-        year: document.getElementById('year').value,
-        category: document.getElementById('category').value
-      };
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Menyimpan...';
-
-      try {
-        const response = await fetch('/api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newBook)
-        });
-        
-        let result = null;
-        try {
-          result = await response.json();
-        } catch (parseError) {
-          result = null;
-        }
-
-        if (response.ok && result && result.success) {
-          bookForm.reset();
-          fetchBooks();
-        } else {
-          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
-          alert('Buku gagal disimpan.\n\n' + reason);
-        }
-      } catch (error) {
-        console.error('Error adding book:', error);
-        alert('Terjadi kesalahan saat menyimpan buku.');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Simpan Buku';
-      }
-    });
-
-    // Fungsi Menghapus Buku (DELETE)
-    async function deleteBook(id) {
-      if (!confirm('Apakah Anda yakin ingin menghapus buku ini?')) return;
-
-      try {
-        const response = await fetch(`/api?id=${id}`, { method: 'DELETE' });
-        let result = null;
-        try {
-          result = await response.json();
-        } catch (parseError) {
-          result = null;
-        }
-
-        if (response.ok && result && result.success) {
-          fetchBooks();
-        } else {
-          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
-          alert('Buku gagal dihapus.\n\n' + reason);
-        }
-      } catch (error) {
-        console.error('Error deleting book:', error);
-        alert('Terjadi kesalahan saat menghapus buku.');
-      }
-    }
-
-    // Security Helper untuk mencegah XSS
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;')
@@ -283,8 +394,564 @@
         .replace(/'/g, '&#039;');
     }
 
-    // Muat data saat halaman pertama kali dibuka
-    document.addEventListener('DOMContentLoaded', fetchBooks);
+    function paletteFor(book) {
+      const source = String(book.title || '') + String(book.author || '');
+      let hash = 7;
+      for (let i = 0; i < source.length; i++) {
+        hash = (hash * 31 + source.charCodeAt(i)) | 0;
+      }
+      return COVER_PALETTES[Math.abs(hash) % COVER_PALETTES.length];
+    }
+
+    // Sampul dibuat dari judul & penulis, jadi setiap buku selalu punya "cover"
+    function coverMarkup(book, options) {
+      const compact = options && options.compact === true;
+      const palette = paletteFor(book);
+      const title = escapeHtml(book.title || 'Tanpa judul');
+      const author = escapeHtml(book.author || 'Tanpa penulis');
+      const category = escapeHtml(book.category || 'Umum');
+      const year = book.year ? escapeHtml(book.year) : '';
+      const padding = compact ? '14px 14px 14px 18px' : '20px 20px 20px 24px';
+
+      return `
+        <div class="absolute inset-0" style="background:linear-gradient(155deg, ${palette.from} 0%, ${palette.to} 100%)"></div>
+        <div class="cover-texture absolute inset-0"></div>
+        <div class="cover-sheen absolute inset-0"></div>
+        <div class="absolute inset-y-0 left-0 w-[7px] bg-black/30"></div>
+        <div class="absolute inset-y-0 left-[7px] w-px bg-white/15"></div>
+        <div class="absolute inset-y-0 left-[9px] w-[3px] bg-black/10"></div>
+        <div class="relative flex h-full flex-col" style="padding:${padding}">
+          <div class="flex items-start justify-between gap-2">
+            <span class="text-[9px] font-semibold uppercase tracking-[0.22em]" style="color:${palette.accent}">${category}</span>
+            ${year ? `<span class="text-[9px] tabular-nums text-white/40">${year}</span>` : ''}
+          </div>
+          <div class="mt-auto">
+            <div class="mb-3 h-px w-7" style="background:${palette.accent}; opacity:.65"></div>
+            <h3 class="font-display ${compact ? 'text-[13px]' : 'text-[17px]'} font-medium leading-tight text-white/95 line-clamp-4">${title}</h3>
+            <p class="mt-2.5 truncate text-[9px] uppercase tracking-[0.16em] text-white/55">${author}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function visibleBooks() {
+      const query = state.query.trim().toLowerCase();
+      let list = state.books.filter((book) => {
+        const matchesQuery = !query || [book.title, book.author, book.category]
+          .some((value) => String(value || '').toLowerCase().includes(query));
+        const bookCategory = book.category || 'Umum';
+        const matchesCategory = state.category === 'Semua' || bookCategory === state.category;
+        return matchesQuery && matchesCategory;
+      });
+
+      if (state.sort === 'title') {
+        list = list.slice().sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'id'));
+      } else if (state.sort === 'year-desc') {
+        list = list.slice().sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+      } else if (state.sort === 'year-asc') {
+        list = list.slice().sort((a, b) => (Number(a.year) || 99999) - (Number(b.year) || 99999));
+      }
+      return list;
+    }
+
+    function renderStats() {
+      const books = state.books;
+      const categories = new Set(books.map((book) => book.category || 'Umum'));
+      const years = books.map((book) => Number(book.year)).filter((year) => Number.isFinite(year) && year > 0);
+      const latest = years.length ? Math.max.apply(null, years) : null;
+      const empty = state.loading && !books.length;
+
+      els.total.textContent = empty ? '—' : books.length;
+      els.categories.textContent = empty ? '—' : categories.size;
+      els.latest.textContent = empty ? '—' : (latest || '—');
+      els.headerCount.textContent = empty ? 'Memuat…' : `${books.length} buku`;
+    }
+
+    function renderPills() {
+      const counts = new Map();
+      state.books.forEach((book) => {
+        const category = book.category || 'Umum';
+        counts.set(category, (counts.get(category) || 0) + 1);
+      });
+
+      const categories = Array.from(counts.keys())
+        .sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b, 'id'));
+
+      const items = [{ name: 'Semua', total: state.books.length }].concat(
+        categories.map((name) => ({ name, total: counts.get(name) }))
+      );
+
+      els.pills.innerHTML = items.map((item) => {
+        const active = item.name === state.category;
+        return `
+          <button type="button" data-category="${escapeHtml(item.name)}" aria-pressed="${active}"
+            class="shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition ${
+              active
+                ? 'border-forest bg-forest text-white shadow-sm'
+                : 'border-line bg-surface text-muted hover:border-forest/40 hover:text-ink'
+            }">
+            ${escapeHtml(item.name)}
+            <span class="ml-1.5 ${active ? 'text-white/55' : 'text-muted/60'}">${item.total}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderFeatured() {
+      if (state.loading && !state.books.length) {
+        els.featured.innerHTML = '';
+        return;
+      }
+
+      const fallback = [
+        { title: 'Bumi Manusia', author: 'Pramoedya Ananta Toer', category: 'Fiksi', year: 1980 },
+        { title: 'Sapiens', author: 'Yuval Noah Harari', category: 'Sejarah', year: 2011 },
+        { title: 'Clean Code', author: 'Robert C. Martin', category: 'Teknologi', year: 2008 }
+      ];
+      const picks = (state.books.length ? state.books.slice(0, 3) : fallback).slice(0, 3);
+
+      els.featured.innerHTML = picks.map((book) => `
+        <div class="feature-cover">
+          ${coverMarkup(book, { compact: true })}
+        </div>
+      `).join('');
+    }
+
+    function renderSkeleton() {
+      els.grid.innerHTML = Array.from({ length: 8 }).map(() => `
+        <div>
+          <div class="skeleton aspect-[3/4.1] w-full rounded-[4px_14px_14px_4px]"></div>
+          <div class="mt-3 space-y-2">
+            <div class="skeleton h-3 w-4/5 rounded"></div>
+            <div class="skeleton h-3 w-2/5 rounded"></div>
+          </div>
+        </div>
+      `).join('');
+      els.count.textContent = 'Memuat koleksi…';
+    }
+
+    function noticeMarkup(notice) {
+      const icon = notice.icon || 'ℹ';
+      const actionMarkup = notice.action === 'retry'
+        ? '<button type="button" data-retry class="mt-5 rounded-xl bg-forest px-4 py-2 text-sm font-semibold text-white transition hover:bg-forest-deep">Coba lagi</button>'
+        : notice.action === 'seed'
+          ? '<button type="button" data-seed class="mt-5 rounded-xl bg-forest px-4 py-2 text-sm font-semibold text-white transition hover:bg-forest-deep">Isi buku contoh</button>'
+          : notice.action === 'reset'
+            ? '<button type="button" data-reset class="mt-5 rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper">Tampilkan semua</button>'
+            : '';
+
+      const technicalMarkup = notice.technical
+        ? `<details class="mx-auto mt-4 max-w-lg text-left">
+             <summary class="cursor-pointer text-xs font-medium text-forest/80">Detail teknis</summary>
+             <pre class="mt-2 whitespace-pre-wrap break-words rounded-xl border border-line bg-paper/70 p-3 text-[11px] leading-relaxed text-muted">${escapeHtml(notice.technical)}</pre>
+           </details>`
+        : '';
+
+      return `
+        <div class="col-span-full">
+          <div class="flex flex-col items-center rounded-3xl border border-line bg-surface px-6 py-14 text-center">
+            <div class="grid h-14 w-14 place-items-center rounded-2xl bg-paper text-2xl" aria-hidden="true">${escapeHtml(icon)}</div>
+            <h3 class="mt-4 font-display text-lg font-semibold text-ink">${escapeHtml(notice.title)}</h3>
+            <p class="mt-1.5 max-w-sm text-sm leading-relaxed text-muted">${escapeHtml(notice.detail)}</p>
+            ${actionMarkup}
+            ${technicalMarkup}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGrid() {
+      if (state.loading) {
+        renderSkeleton();
+        return;
+      }
+
+      if (state.error) {
+        els.grid.innerHTML = noticeMarkup(state.error);
+        els.count.textContent = 'Koleksi tidak tersedia';
+        return;
+      }
+
+      if (!state.books.length) {
+        els.grid.innerHTML = noticeMarkup({
+          icon: '📚',
+          title: 'Rak masih kosong',
+          detail: 'Belum ada buku di perpustakaan. Tambahkan buku pertama, atau isi rak dengan koleksi contoh.',
+          action: 'seed'
+        });
+        els.count.textContent = '0 buku';
+        return;
+      }
+
+      const list = visibleBooks();
+      if (!list.length) {
+        els.grid.innerHTML = noticeMarkup({
+          icon: '🔍',
+          title: 'Tidak ada buku yang cocok',
+          detail: 'Coba kata kunci lain atau tampilkan seluruh kategori.',
+          action: 'reset'
+        });
+        els.count.textContent = `0 dari ${state.books.length} buku`;
+        return;
+      }
+
+      els.grid.innerHTML = list.map((book) => {
+        const id = escapeHtml(book.id || '');
+        return `
+          <article class="book-card group">
+            <div class="relative">
+              <div class="book-art relative aspect-[3/4.1] overflow-hidden rounded-[4px_14px_14px_4px] shadow-book">
+                ${coverMarkup(book)}
+              </div>
+              <button type="button" data-delete="${id}" aria-label="Hapus buku ${escapeHtml(book.title || '')}"
+                class="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/25 text-white/80 opacity-100 backdrop-blur-sm transition hover:bg-red-600 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                  <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mt-3.5 flex items-start justify-between gap-3 px-0.5">
+              <div class="min-w-0">
+                <h4 class="truncate text-sm font-semibold text-ink" title="${escapeHtml(book.title || '')}">${escapeHtml(book.title || 'Tanpa judul')}</h4>
+                <p class="mt-0.5 truncate text-xs text-muted">${escapeHtml(book.author || 'Tanpa penulis')}</p>
+              </div>
+              <span class="shrink-0 rounded-full border border-line bg-surface px-2 py-1 text-[10px] font-semibold tabular-nums text-muted">${escapeHtml(book.year || '—')}</span>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      els.count.textContent = list.length === state.books.length
+        ? `${state.books.length} buku di rak`
+        : `${list.length} dari ${state.books.length} buku`;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderPills();
+      renderFeatured();
+      renderGrid();
+    }
+
+    async function fetchBooks() {
+      state.loading = true;
+      state.error = null;
+      renderGrid();
+      renderStats();
+
+      try {
+        const response = await fetch('/api', { headers: { Accept: 'application/json' } });
+
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
+        }
+
+        if (!response.ok || !result || result.success !== true) {
+          const serverDetail = result
+            ? [result.message, result.error].filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index).join('\n\n')
+            : '';
+
+          state.books = [];
+          state.loading = false;
+          state.error = {
+            icon: '⚠️',
+            title: 'Data buku gagal dimuat',
+            detail: serverDetail
+              ? 'Server menolak permintaan ini. Silakan coba lagi beberapa saat lagi.'
+              : `Server membalas dengan status ${response.status} dan tidak mengirim data yang bisa dibaca.`,
+            technical: serverDetail || `HTTP ${response.status} ${response.statusText || ''}`.trim(),
+            action: 'retry'
+          };
+          renderAll();
+          return;
+        }
+
+        state.books = Array.isArray(result.data) ? result.data : [];
+        state.loading = false;
+        renderAll();
+      } catch (error) {
+        console.error('Error fetching books:', error);
+        state.books = [];
+        state.loading = false;
+        state.error = {
+          icon: '📡',
+          title: 'Tidak dapat menghubungi server',
+          detail: 'Periksa koneksi internet Anda, lalu coba lagi.',
+          technical: error && error.message ? error.message : String(error),
+          action: 'retry'
+        };
+        renderAll();
+      }
+    }
+
+    function showToast(message, type) {
+      const styles = {
+        success: 'border-forest/20 bg-forest text-white',
+        error: 'border-red-200 bg-red-600 text-white',
+        info: 'border-line bg-surface text-ink'
+      };
+      const toast = document.createElement('div');
+      toast.className = `flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lift ${styles[type] || styles.info}`;
+      toast.setAttribute('role', 'status');
+      toast.innerHTML = `
+        <span class="mt-0.5 shrink-0 text-base leading-none">${type === 'error' ? '⚠️' : type === 'success' ? '✓' : 'ℹ'}</span>
+        <p class="leading-snug">${escapeHtml(message)}</p>
+      `;
+      els.toastRoot.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.transition = 'opacity .3s ease, transform .3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 320);
+      }, 3800);
+    }
+
+    let confirmResolve = null;
+
+    function askConfirm(message) {
+      els.confirmMessage.textContent = message;
+      els.confirmDialog.showModal();
+      return new Promise((resolve) => {
+        confirmResolve = resolve;
+      });
+    }
+
+    document.getElementById('confirmCancel').addEventListener('click', () => {
+      els.confirmDialog.close();
+    });
+
+    document.getElementById('confirmOk').addEventListener('click', () => {
+      const resolve = confirmResolve;
+      confirmResolve = null;
+      els.confirmDialog.close();
+      if (resolve) resolve(true);
+    });
+
+    els.confirmDialog.addEventListener('close', () => {
+      if (confirmResolve) {
+        confirmResolve(false);
+        confirmResolve = null;
+      }
+    });
+
+    async function deleteBook(id) {
+      const book = state.books.find((item) => item.id === id);
+      const confirmed = await askConfirm(
+        book
+          ? `"${book.title || 'Buku ini'}" akan dihapus permanen dari koleksi.`
+          : 'Buku ini akan dihapus permanen dari koleksi.'
+      );
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
+        }
+
+        if (response.ok && result && result.success) {
+          state.books = state.books.filter((item) => item.id !== id);
+          renderAll();
+          showToast('Buku berhasil dihapus dari rak.', 'success');
+        } else {
+          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
+          showToast('Buku gagal dihapus. ' + reason, 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting book:', error);
+        showToast('Terjadi kesalahan saat menghapus buku.', 'error');
+      }
+    }
+
+    async function seedBooks() {
+      const trigger = els.grid.querySelector('[data-seed]');
+      if (trigger) {
+        trigger.disabled = true;
+        trigger.textContent = 'Mengisi rak…';
+      }
+
+      try {
+        const response = await fetch('/api/seed', { method: 'POST' });
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
+        }
+
+        if (response.ok && result && result.success) {
+          showToast(result.message || 'Buku contoh berhasil ditambahkan.', 'success');
+          fetchBooks();
+        } else {
+          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
+          showToast('Gagal mengisi buku contoh. ' + reason, 'error');
+          if (trigger) {
+            trigger.disabled = false;
+            trigger.textContent = 'Isi buku contoh';
+          }
+        }
+      } catch (error) {
+        console.error('Error seeding books:', error);
+        showToast('Tidak dapat menghubungi server.', 'error');
+        if (trigger) {
+          trigger.disabled = false;
+          trigger.textContent = 'Isi buku contoh';
+        }
+      }
+    }
+
+    els.grid.addEventListener('click', (event) => {
+      const deleteBtn = event.target.closest('[data-delete]');
+      if (deleteBtn) {
+        deleteBook(deleteBtn.getAttribute('data-delete'));
+        return;
+      }
+      if (event.target.closest('[data-retry]')) {
+        fetchBooks();
+        return;
+      }
+      if (event.target.closest('[data-seed]')) {
+        seedBooks();
+        return;
+      }
+      if (event.target.closest('[data-reset]')) {
+        state.query = '';
+        state.category = 'Semua';
+        els.search.value = '';
+        renderAll();
+      }
+    });
+
+    els.pills.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-category]');
+      if (!button) return;
+      state.category = button.getAttribute('data-category');
+      renderPills();
+      renderGrid();
+    });
+
+    els.search.addEventListener('input', (event) => {
+      state.query = event.target.value;
+      renderGrid();
+    });
+
+    els.sort.addEventListener('change', (event) => {
+      state.sort = event.target.value;
+      renderGrid();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const tag = (event.target.tagName || '').toLowerCase();
+      const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || event.target.isContentEditable;
+      if (event.key === '/' && !typing) {
+        event.preventDefault();
+        els.search.focus();
+      }
+    });
+
+    function openBookForm() {
+      els.form.reset();
+      els.formError.classList.add('hidden');
+      els.formError.textContent = '';
+      document.getElementById('year').value = new Date().getFullYear();
+      els.bookDialog.showModal();
+      setTimeout(() => document.getElementById('title').focus(), 80);
+    }
+
+    document.querySelectorAll('[data-open-form]').forEach((button) => {
+      button.addEventListener('click', openBookForm);
+    });
+
+    document.querySelectorAll('[data-close-form]').forEach((button) => {
+      button.addEventListener('click', () => els.bookDialog.close());
+    });
+
+    [els.bookDialog, els.confirmDialog].forEach((dialog) => {
+      dialog.addEventListener('click', (event) => {
+        const box = dialog.getBoundingClientRect();
+        const outside = event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+        if (outside) dialog.close();
+      });
+    });
+
+    els.form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      els.formError.classList.add('hidden');
+
+      const payload = {
+        title: document.getElementById('title').value.trim(),
+        author: document.getElementById('author').value.trim(),
+        year: document.getElementById('year').value,
+        category: document.getElementById('category').value
+      };
+
+      if (!payload.title || !payload.author) {
+        els.formError.textContent = 'Judul dan penulis wajib diisi.';
+        els.formError.classList.remove('hidden');
+        return;
+      }
+
+      els.submitBtn.disabled = true;
+      els.submitBtn.textContent = 'Menyimpan…';
+
+      try {
+        const response = await fetch('/api', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        let result = null;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          result = null;
+        }
+
+        if (response.ok && result && result.success) {
+          els.bookDialog.close();
+          showToast('Buku baru berhasil ditambahkan ke rak.', 'success');
+          fetchBooks();
+        } else {
+          const reason = (result && (result.message || result.error)) || `server membalas status ${response.status}`;
+          els.formError.textContent = 'Buku gagal disimpan. ' + reason;
+          els.formError.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error adding book:', error);
+        els.formError.textContent = 'Terjadi kesalahan saat menyimpan buku. Coba lagi.';
+        els.formError.classList.remove('hidden');
+      } finally {
+        els.submitBtn.disabled = false;
+        els.submitBtn.textContent = 'Simpan Buku';
+      }
+    });
+
+    const yearInput = document.getElementById('year');
+    yearInput.placeholder = String(new Date().getFullYear());
+    yearInput.addEventListener('focus', () => {
+      if (!yearInput.value) yearInput.value = new Date().getFullYear();
+    });
+    yearInput.addEventListener('input', function () {
+      if (this.value.length > 4) this.value = this.value.slice(0, 4);
+    });
+
+    document.getElementById('copyYear').textContent = new Date().getFullYear();
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fetchBooks);
+    } else {
+      fetchBooks();
+    }
   </script>
 </body>
 </html>
